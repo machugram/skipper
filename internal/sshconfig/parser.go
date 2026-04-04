@@ -29,7 +29,7 @@ func ParseHosts(path string) ([]Host, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []Host{}, fmt.Errorf("Error: %w", err)
+			return []Host{}, fmt.Errorf("error: %w", err)
 		}
 		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}

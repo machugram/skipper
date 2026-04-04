@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jerryagbesi/skipper/internal/connect"
 	"github.com/jerryagbesi/skipper/internal/sshconfig"
+	"github.com/jerryagbesi/skipper/internal/ui"
+
 	"github.com/spf13/cobra"
 )
 
@@ -30,11 +33,29 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		for _, host := range hosts {
-			fmt.Println("Hostname:", host.Hostname)
-			fmt.Println("User:", host.User)
-			fmt.Println("port:", host.Port)
+		if len(hosts) == 0 {
+			fmt.Println("no hosts found in config file")
+			os.Exit(1)
 		}
+
+		// Render bubbletea UI and get selected host
+		result, err := ui.Run(hosts)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		if result.Cancelled {
+			return
+		}
+
+		// Connect to selected host
+		err = connect.Connect(result.Host)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 	},
 	SilenceErrors: true,
 	Long: `skipper is a cli tool for managing ssh connections, It allows you to select your preferred ssh host alias, connect to it, and execute commands.
