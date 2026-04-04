@@ -4,23 +4,48 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jerryagbesi/skipper/internal/sshconfig"
 	"github.com/spf13/cobra"
 )
 
 var configPath string
 
 var rootCmd = &cobra.Command{
-	Use:     "skipper",
+	Use:     "skipper <command> [flags]",
 	Version: "v1.0:beta",
 	Short:   "skipper is a cli tool for managing ssh connections",
-	Long: `skipper is a cli tool for managing ssh connections, It allows you to select your preferred ssh connection and execute commands on it. eg. skipper
+	Example: "skipper --version",
+	Run: func(cmd *cobra.Command, args []string) {
+		if configPath == "" {
+			var err error
+			configPath, err = sshconfig.DefaultConfigPath()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+		hosts, err := sshconfig.ParseHosts(configPath)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		for _, host := range hosts {
+			fmt.Println("Hostname:", host.Hostname)
+			fmt.Println("User:", host.User)
+			fmt.Println("port:", host.Port)
+		}
+	},
+	SilenceErrors: true,
+	Long: `skipper is a cli tool for managing ssh connections, It allows you to select your preferred ssh host alias, connect to it, and execute commands.
 
 Usage: skipper <command> [flags]
 
 Flags:
-  -c, --config string   path to ssh config file, defaults to ~/.ssh/config
-  -h, --help            help for skipper
-  -v, --version         print version information`,
+
+	-c, --config string   path to ssh config file, defaults to ~/.ssh/config
+	-h, --help            help for skipper
+	-v, --version         print version information`,
 }
 
 func Execute() {
@@ -31,6 +56,10 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "~/.ssh/config", "path to ssh config file, defaults to ~/.ssh/config")
+	// rootCmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+	// 	return fmt.Errorf("invalid flag: %w \n please run 'skipper --help' for usage information", err)
+	// })
+
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "path to ssh config file, defaults to ~/.ssh/config")
 	rootCmd.Flags().BoolP("version", "v", false, "print version information")
 }
