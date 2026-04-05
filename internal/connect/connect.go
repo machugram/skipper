@@ -9,16 +9,20 @@ import (
 	"github.com/jerryagbesi/skipper/internal/sshconfig"
 )
 
-func Connect(host *sshconfig.Host) error {
+type Commander func(name string, args ...string) *exec.Cmd //allows for mocking exec.Command
+
+func Connect(host *sshconfig.Host, commander Commander) error {
 	target := host.Alias
 
 	var cmd *exec.Cmd
 
 	if target != "" {
-		cmd = exec.Command("ssh", host.Alias)
-	} else {
+		cmd = commander("ssh", host.Alias)
+	} else if host.Hostname != "" {
 		target = host.Hostname
-		cmd = exec.Command("ssh", host.User+"@"+host.Hostname, "-p", strconv.Itoa(host.Port))
+		cmd = commander("ssh", host.User+"@"+host.Hostname, "-p", strconv.Itoa(host.Port))
+	} else {
+		return fmt.Errorf("no target specified")
 	}
 
 	fmt.Printf("Connecting to %s\n", target)

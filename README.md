@@ -1,3 +1,6 @@
+![build](https://github.com/JerryAgbesi/skipper/actions/workflows/build.yml/badge.svg) 
+![release](https://github.com/JerryAgbesi/skipper/actions/workflows/release.yml/badge.svg) 
+
 # Skipper
 
 A CLI tool for managing SSH connections with an interactive terminal UI. Skipper reads your `~/.ssh/config` file and lets you browse, search, and connect to hosts without memorizing aliases.

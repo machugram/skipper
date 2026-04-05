@@ -1,0 +1,11 @@
+project_name: skipper
+
+builds:
+  - binary: skipper
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./main.go

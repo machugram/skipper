@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/jerryagbesi/skipper/internal/connect"
 	"github.com/jerryagbesi/skipper/internal/sshconfig"
@@ -50,7 +51,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Connect to selected host
-		err = connect.Connect(result.Host)
+		err = connect.Connect(result.Host, exec.Command)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
