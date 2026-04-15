@@ -5,7 +5,7 @@
 
 A CLI tool for managing SSH connections with an interactive terminal UI. Skipper reads your `~/.ssh/config` file and lets you browse, search, and connect to hosts without memorizing aliases.You can fuzzy-search aliases and connection details, then connect immediately from the same screen — or skip the UI entirely when there's only one match.
 
-![Skipper UI](https://github.com/user-attachments/assets/12d818ce-61ec-45c2-8af9-104f5bc8c00f)
+<img width="657" height="147" alt="image" src="https://github.com/user-attachments/assets/eb6edc3e-d238-470a-8fea-3deae369970b" />
 
 
 ## Features
