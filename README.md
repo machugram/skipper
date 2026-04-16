@@ -63,9 +63,18 @@ skipper [flags]
 
 | Flag | Description |
 |------|-------------|
+| `-a, --add <alias> <target>` | Add a host entry to the SSH config using a target like `user@host[:port]` |
 | `-c, --config <path>` | Path to SSH config file (default: `~/.ssh/config`) |
+| `-f, --find [term]` | Open directly in find mode, or pre-filter hosts when a search term is provided |
 | `-v, --version` | Print version |
 | `-h, --help` | Show help |
+
+Examples:
+
+```bash
+skipper --add devone user@ipaddress:9000
+skipper --add bastion admin@10.0.0.5
+```
 
 ### Keyboard Controls
 
