@@ -111,3 +111,31 @@ func TestAddHostWritesSafeIdentityFile(t *testing.T) {
 		t.Fatalf("expected identity file to be written, got content:\n%s", string(content))
 	}
 }
+
+func TestAddHostRejectsDuplicateAliasWithDifferentIdentityFile(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config")
+
+	_, err := AddHost(configPath, Host{
+		Alias:        "jump-box",
+		Hostname:     "example.com",
+		User:         "alice",
+		IdentityFile: "/Users/test/.ssh/id_ed25519",
+	})
+	if err != nil {
+		t.Fatalf("expected first host to be added, got %v", err)
+	}
+
+	_, err = AddHost(configPath, Host{
+		Alias:        "jump-box",
+		Hostname:     "example.com",
+		User:         "alice",
+		IdentityFile: "/Users/test/.ssh/id_rsa",
+	})
+	if err == nil {
+		t.Fatal("expected duplicate alias with different identity file to fail")
+	}
+
+	if !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("expected duplicate alias error, got %v", err)
+	}
+}

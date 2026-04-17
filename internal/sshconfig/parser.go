@@ -53,7 +53,7 @@ func ParseHosts(path string) ([]Host, error) {
 
 			hostname, _ := cfg.Get(alias, "Hostname")
 			user, _ := cfg.Get(alias, "User")
-			identityFile := ssh_config.Get(alias, "IdentityFile")
+			identityFile, _ := cfg.Get(alias, "IdentityFile")
 
 			var port int
 			if raw, _ := cfg.Get(alias, "Port"); raw != "" {

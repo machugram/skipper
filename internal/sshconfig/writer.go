@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-func AddHost(path string, host Host) (*Host, error) {
+func AddHost(path string, host Host) (addedHost *Host, err error) {
 	if strings.TrimSpace(host.Hostname) == "" {
 		return nil, fmt.Errorf("host name is required")
 	}
@@ -32,7 +32,7 @@ func AddHost(path string, host Host) (*Host, error) {
 			continue
 		}
 
-		if existingHost.Hostname == host.Hostname && existingHost.User == host.User && existingHost.Port == host.Port {
+		if sameHostSettings(existingHost, host) {
 			return &existingHost, nil
 		}
 
@@ -52,7 +52,15 @@ func AddHost(path string, host Host) (*Host, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			if err == nil {
+				err = fmt.Errorf("failed to close config file %q: %w", path, cerr)
+			} else {
+				err = fmt.Errorf("%v; close error for %q: %w", err, path, cerr)
+			}
+		}
+	}()
 
 	if len(currentContent) > 0 && !strings.HasSuffix(string(currentContent), "\n") {
 		if _, err := file.WriteString("\n"); err != nil {
@@ -70,7 +78,8 @@ func AddHost(path string, host Host) (*Host, error) {
 		return nil, fmt.Errorf("failed to write host %q to %s: %w", host.Alias, path, err)
 	}
 
-	return &host, nil
+	addedHost = &host
+	return addedHost, nil
 }
 
 func readExistingHosts(path string) ([]Host, error) {
@@ -110,6 +119,17 @@ func resolveAlias(host Host) string {
 	}
 
 	return host.Hostname
+}
+
+func sameHostSettings(existingHost, requestedHost Host) bool {
+	return existingHost.Hostname == requestedHost.Hostname &&
+		existingHost.User == requestedHost.User &&
+		existingHost.Port == requestedHost.Port &&
+		normalizeIdentityFile(existingHost.IdentityFile) == normalizeIdentityFile(requestedHost.IdentityFile)
+}
+
+func normalizeIdentityFile(identityFile string) string {
+	return strings.TrimSpace(identityFile)
 }
 
 func validateHostFields(host Host) error {
