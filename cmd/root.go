@@ -13,9 +13,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var configPath string
-var addAlias string
-var findQuery string
+var (
+	configPath string
+	addAlias   string
+	findQuery  string
+)
 
 var version = "dev"
 
@@ -162,7 +164,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "path to ssh config file, defaults to ~/.ssh/config")
-	rootCmd.Flags().StringVarP(&addAlias, "add", "a", "", "add a host alias using a target like user@host[:port]")
+	rootCmd.Flags().StringVarP(&addAlias, "add", "a", "", "add a host alias using `<alias>` user@host[:port]")
 	rootCmd.Flags().StringVarP(&findQuery, "find", "f", "", "start in find mode or pre-filter hosts by a search term")
 	rootCmd.Flags().Lookup("find").NoOptDefVal = ""
 	rootCmd.Flags().BoolP("version", "v", false, "print version information")
