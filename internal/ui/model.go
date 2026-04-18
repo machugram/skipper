@@ -14,20 +14,6 @@ func (i item) Title() string       { return i.host.Alias }
 func (i item) Description() string { return i.host.Hostname }
 func (i item) FilterValue() string { return i.host.Alias + " " + i.host.Hostname }
 
-// func hostDescription(host sshconfig.Host) string {
-// 	desc := host.Hostname
-
-// 	if host.User != "" {
-// 		desc = host.User + "@" + host.Hostname
-// 	}
-
-// 	if host.Port != 0 {
-// 		desc += fmt.Sprintf(":%d", host.Port)
-// 	}
-
-// 	return desc
-// }
-
 type Model struct {
 	list         list.Model
 	selectedHost *sshconfig.Host
@@ -39,7 +25,11 @@ type Result struct {
 	Cancelled bool
 }
 
-func NewModel(hosts []sshconfig.Host) *Model {
+type RunOptions struct {
+	StartFiltering bool
+}
+
+func NewModel(hosts []sshconfig.Host, options RunOptions) *Model {
 	items := make([]list.Item, len(hosts))
 	for i, h := range hosts {
 		items[i] = item{host: h}
@@ -49,10 +39,13 @@ func NewModel(hosts []sshconfig.Host) *Model {
 	l.Title = "Select a Host"
 	l.SetFilteringEnabled(true)
 	l.SetShowStatusBar(true)
+	if options.StartFiltering {
+		l.SetFilterState(list.Filtering)
+	}
 	return &Model{list: l}
 }
 
-func (m Model) Init() tea.Cmd { // Do nothing on start up. The list of host would have been loaded by the time the UI starts.
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
@@ -95,8 +88,8 @@ func (m Model) View() string {
 	return m.list.View()
 }
 
-func Run(hosts []sshconfig.Host) (Result, error) {
-	model := NewModel(hosts)
+func Run(hosts []sshconfig.Host, options RunOptions) (Result, error) {
+	model := NewModel(hosts, options)
 
 	if len(hosts) == 1 {
 		return Result{Host: &hosts[0]}, nil
