@@ -92,6 +92,16 @@ skipper --add devone user@ipaddress:9000
 skipper --add bastion admin@10.0.0.5
 ```
 
+### Generate Man Pages
+
+```bash
+make man
+# or
+skipper man ./dist/man
+```
+
+This writes roff man pages to `dist/man/`, including the main `skipper.1` page.
+
 ### Keyboard Controls
 
 | Key | Action |

@@ -1,0 +1,48 @@
+.nh
+.TH "SKIPPER" "1" "Apr 2026" "dev" "Skipper Manual"
+
+.SH NAME
+skipper-completion-fish - Generate the autocompletion script for fish
+
+
+.SH SYNOPSIS
+\fBskipper completion fish [flags]\fP
+
+
+.SH DESCRIPTION
+Generate the autocompletion script for the fish shell.
+
+.PP
+To load completions in your current shell session:
+
+.EX
+skipper completion fish | source
+.EE
+
+.PP
+To load completions for every new session, execute once:
+
+.EX
+skipper completion fish > ~/.config/fish/completions/skipper.fish
+.EE
+
+.PP
+You will need to start a new shell for this setup to take effect.
+
+
+.SH OPTIONS
+\fB-h\fP, \fB--help\fP[=false]
+	help for fish
+
+.PP
+\fB--no-descriptions\fP[=false]
+	disable completion descriptions
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB-c\fP, \fB--config\fP=""
+	path to ssh config file, defaults to ~/.ssh/config
+
+
+.SH SEE ALSO
+\fBskipper-completion(1)\fP

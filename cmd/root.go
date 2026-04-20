@@ -20,13 +20,19 @@ var findQuery string
 var version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:           "skipper <command> [flags]",
-	Version:       version,
-	Short:         "skipper is a cli tool for managing ssh connections",
-	Example:       "skipper --version",
+	Use:     "skipper [alias] [flags]",
+	Version: version,
+	Short:   "Skipper is a CLI tool for managing SSH connections",
+	Example: strings.Join([]string{
+		"skipper devbox",
+		"skipper --add devbox user@example.com:9000",
+		"skipper --find",
+		"skipper man ./dist/man",
+	}, "\n"),
+	Args:          cobra.MaximumNArgs(1),
 	RunE:          runRoot,
 	SilenceErrors: true,
-	Long:          `skipper is a cli tool for managing ssh connections, It allows you to select your preferred ssh host alias, connect to it, and execute commands.`,
+	Long:          `Skipper is a CLI tool for managing SSH connections. It lets you select your preferred SSH host alias, connect to it, and execute commands.`,
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -54,6 +60,15 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no hosts found in config file")
 	}
 
+	// Direct connect: skipper <alias>
+	if len(args) == 1 && !cmd.Flags().Changed("add") {
+		host, err := findHost(hosts, args[0])
+		if err != nil {
+			return err
+		}
+		return connect.Connect(host, exec.Command)
+	}
+
 	options, hosts, err := prepareHostSelection(cmd, hosts)
 	if err != nil {
 		return err
@@ -69,6 +84,16 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	}
 
 	return connect.Connect(result.Host, exec.Command)
+}
+
+func findHost(hosts []sshconfig.Host, alias string) (*sshconfig.Host, error) {
+	alias = strings.TrimSpace(strings.ToLower(alias))
+	for i := range hosts {
+		if strings.ToLower(hosts[i].Alias) == alias {
+			return &hosts[i], nil
+		}
+	}
+	return nil, fmt.Errorf("host %q not found in config", alias)
 }
 
 func resolveConfigPath(path string) (string, error) {
@@ -101,11 +126,11 @@ func prepareHostSelection(cmd *cobra.Command, hosts []sshconfig.Host) (ui.RunOpt
 func addHost(path, alias string, args []string) (*sshconfig.Host, error) {
 	alias = strings.TrimSpace(alias)
 	if alias == "" {
-		return nil, fmt.Errorf("--add requires an alias")
+		return nil, fmt.Errorf("--add expects: --add <alias> <user@host[:port]>")
 	}
 
 	if len(args) != 1 {
-		return nil, fmt.Errorf("--add requires exactly one target in the format user@host[:port]")
+		return nil, fmt.Errorf("--add expects: --add <alias> <user@host[:port]>")
 	}
 
 	host, err := connect.ParseTarget(args[0])
@@ -162,7 +187,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "path to ssh config file, defaults to ~/.ssh/config")
-	rootCmd.Flags().StringVarP(&addAlias, "add", "a", "", "add a host alias using a target like user@host[:port]")
+	rootCmd.Flags().StringVarP(&addAlias, "add", "a", "", "add a host entry; usage: --add <alias> <user@host[:port]>")
 	rootCmd.Flags().StringVarP(&findQuery, "find", "f", "", "start in find mode or pre-filter hosts by a search term")
 	rootCmd.Flags().Lookup("find").NoOptDefVal = ""
 	rootCmd.Flags().BoolP("version", "v", false, "print version information")

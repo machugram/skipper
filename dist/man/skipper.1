@@ -1,0 +1,46 @@
+.nh
+.TH "SKIPPER" "1" "Apr 2026" "dev" "Skipper Manual"
+
+.SH NAME
+skipper - Skipper is a CLI tool for managing SSH connections
+
+
+.SH SYNOPSIS
+\fBskipper [flags]\fP
+
+
+.SH DESCRIPTION
+Skipper is a CLI tool for managing SSH connections. It lets you select your preferred SSH host alias, connect to it, and execute commands.
+
+
+.SH OPTIONS
+\fB-a\fP, \fB--add\fP=""
+	add a host entry; usage: --add  
+
+.PP
+\fB-c\fP, \fB--config\fP=""
+	path to ssh config file, defaults to ~/.ssh/config
+
+.PP
+\fB-f\fP, \fB--find\fP=""
+	start in find mode or pre-filter hosts by a search term
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for skipper
+
+.PP
+\fB-v\fP, \fB--version\fP[=false]
+	print version information
+
+
+.SH EXAMPLE
+.EX
+skipper --version
+skipper --add devbox user@example.com:9000
+skipper man ./dist/man
+.EE
+
+
+.SH SEE ALSO
+\fBskipper-completion(1)\fP, \fBskipper-man(1)\fP

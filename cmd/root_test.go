@@ -176,6 +176,10 @@ func TestAddHostRequiresAlias(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing alias")
 	}
+
+	if !strings.Contains(err.Error(), "--add <alias> <user@host[:port]>") {
+		t.Fatalf("expected usage hint in error, got %v", err)
+	}
 }
 
 func TestAddHostRequiresExactlyOneTarget(t *testing.T) {
@@ -184,6 +188,10 @@ func TestAddHostRequiresExactlyOneTarget(t *testing.T) {
 	_, err := addHost(configPath, "devone", nil)
 	if err == nil {
 		t.Fatal("expected error for missing target")
+	}
+
+	if !strings.Contains(err.Error(), "--add <alias> <user@host[:port]>") {
+		t.Fatalf("expected usage hint in error, got %v", err)
 	}
 }
 
@@ -206,6 +214,66 @@ func TestResolveConfigPathReturnsExplicitPath(t *testing.T) {
 
 	if path != explicitPath {
 		t.Fatalf("expected %q, got %q", explicitPath, path)
+	}
+}
+
+func TestGenerateManPagesWritesRootManPage(t *testing.T) {
+	outDir := t.TempDir()
+
+	if err := generateManPages(outDir); err != nil {
+		t.Fatalf("expected man page generation to succeed, got %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(outDir, "skipper.1"))
+	if err != nil {
+		t.Fatalf("expected generated man page to exist, got %v", err)
+	}
+
+	text := string(content)
+	if !strings.Contains(text, "skipper") || !strings.Contains(text, "SSH") {
+		t.Fatalf("expected man page to describe skipper, got:\n%s", text)
+	}
+}
+
+func TestFindHostReturnsMatchingHost(t *testing.T) {
+	hosts := []sshconfig.Host{
+		{Alias: "dev", Hostname: "10.0.0.1"},
+		{Alias: "prod", Hostname: "10.0.0.2"},
+	}
+
+	host, err := findHost(hosts, "dev")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if host.Alias != "dev" {
+		t.Fatalf("expected alias dev, got %q", host.Alias)
+	}
+}
+
+func TestFindHostIsCaseInsensitive(t *testing.T) {
+	hosts := []sshconfig.Host{{Alias: "DevBox", Hostname: "10.0.0.1"}}
+
+	host, err := findHost(hosts, "devbox")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if host.Alias != "DevBox" {
+		t.Fatalf("expected alias DevBox, got %q", host.Alias)
+	}
+}
+
+func TestFindHostReturnsErrorWhenNotFound(t *testing.T) {
+	hosts := []sshconfig.Host{{Alias: "dev"}}
+
+	_, err := findHost(hosts, "staging")
+	if err == nil {
+		t.Fatal("expected error for unknown alias")
+	}
+
+	if !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("expected not-found error, got %v", err)
 	}
 }
 

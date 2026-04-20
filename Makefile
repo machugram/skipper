@@ -15,6 +15,9 @@ lint:
 fmt:
 	golangci-lint fmt
 
-.PHONY: all build run lint fmt
+man:
+	go run . man ./dist/man
+
+.PHONY: all build run lint fmt man
 all:
 	golangci-lint fmt && go build -o skipper && go run .
