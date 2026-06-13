@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jerryagbesi/skipper/internal/sshconfig"
@@ -18,6 +20,8 @@ type Model struct {
 	list         list.Model
 	selectedHost *sshconfig.Host
 	quitting     bool
+	configPath   string
+	statusMsg    string
 }
 
 type Result struct {
@@ -27,6 +31,7 @@ type Result struct {
 
 type RunOptions struct {
 	StartFiltering bool
+	ConfigPath     string
 }
 
 func NewModel(hosts []sshconfig.Host, options RunOptions) *Model {
@@ -36,13 +41,13 @@ func NewModel(hosts []sshconfig.Host, options RunOptions) *Model {
 	}
 
 	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "Select a Host"
+	l.Title = "Select a Host  (d: delete)"
 	l.SetFilteringEnabled(true)
 	l.SetShowStatusBar(true)
 	if options.StartFiltering {
 		l.SetFilterState(list.Filtering)
 	}
-	return &Model{list: l}
+	return &Model{list: l, configPath: options.ConfigPath}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -57,27 +62,48 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Don't intercept keys while the list filter is active.
+		if m.list.FilterState() == list.Filtering {
+			break
+		}
+
 		switch msg.String() {
 		case "ctrl+c", "esc", "q":
 			m.quitting = true
 			return m, tea.Quit
 
 		case "enter":
-			if m.list.FilterState() == list.Filtering {
-				break
-			}
-
 			if i, ok := m.list.SelectedItem().(item); ok {
 				m.selectedHost = &i.host
 			}
 			m.quitting = true
 			return m, tea.Quit
-		}
 
+		case "d":
+			if i, ok := m.list.SelectedItem().(item); ok {
+				alias := i.host.Alias
+				if m.configPath != "" {
+					removed, err := sshconfig.RemoveHost(m.configPath, alias)
+					if err != nil {
+						m.statusMsg = fmt.Sprintf("delete failed: %v", err)
+					} else if removed {
+						m.statusMsg = fmt.Sprintf("deleted %q", alias)
+					}
+				}
+				index := m.list.Index()
+				m.list.RemoveItem(index)
+				m.list.SetDelegate(list.NewDefaultDelegate())
+				if len(m.list.Items()) == 0 {
+					m.quitting = true
+					return m, tea.Quit
+				}
+			}
+			return m, nil
+		}
 	}
 
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg) // recursively call the update loop
+	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
 
@@ -85,7 +111,11 @@ func (m Model) View() string {
 	if m.quitting {
 		return ""
 	}
-	return m.list.View()
+	v := m.list.View()
+	if m.statusMsg != "" {
+		v += "\n  " + m.statusMsg
+	}
+	return v
 }
 
 func Run(hosts []sshconfig.Host, options RunOptions) (Result, error) {

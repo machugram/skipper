@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/jerryagbesi/skipper/internal/connect"
@@ -50,6 +51,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	options.ConfigPath = path
 	result, err := ui.Run(hosts, options)
 	if err != nil {
 		return err
@@ -121,14 +123,20 @@ func filterHosts(hosts []sshconfig.Host, query string) []sshconfig.Host {
 }
 
 func hostMatchesQuery(host sshconfig.Host, query string) bool {
-	fields := []string{host.Alias, host.Hostname, host.User, host.IdentityFile}
-	for _, field := range fields {
-		if strings.Contains(strings.ToLower(field), query) {
-			return true
-		}
+	// Avoid a []string heap allocation by checking fields directly.
+	if strings.Contains(strings.ToLower(host.Alias), query) {
+		return true
 	}
-
-	return host.Port != 0 && strings.Contains(fmt.Sprintf("%d", host.Port), query)
+	if strings.Contains(strings.ToLower(host.Hostname), query) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(host.User), query) {
+		return true
+	}
+	if host.IdentityFile != "" && strings.Contains(strings.ToLower(host.IdentityFile), query) {
+		return true
+	}
+	return host.Port != 0 && strings.Contains(strconv.Itoa(host.Port), query)
 }
 
 func hostTarget(host *sshconfig.Host) string {

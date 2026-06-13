@@ -139,3 +139,65 @@ func TestAddHostRejectsDuplicateAliasWithDifferentIdentityFile(t *testing.T) {
 		t.Fatalf("expected duplicate alias error, got %v", err)
 	}
 }
+
+func TestRemoveHostRemovesMatchingBlock(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config")
+
+	for _, h := range []Host{
+		{Alias: "bastion", Hostname: "10.0.0.1", User: "admin"},
+		{Alias: "worker", Hostname: "10.0.0.2", User: "ubuntu"},
+	} {
+		if _, _, err := AddHost(configPath, h); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+	}
+
+	removed, err := RemoveHost(configPath, "bastion")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !removed {
+		t.Fatal("expected removed=true")
+	}
+
+	hosts, err := ParseHosts(configPath)
+	if err != nil {
+		t.Fatalf("expected config to parse, got %v", err)
+	}
+	if len(hosts) != 1 || hosts[0].Alias != "worker" {
+		t.Fatalf("expected only 'worker' remaining, got %+v", hosts)
+	}
+}
+
+func TestRemoveHostReturnsFalseForMissingAlias(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config")
+
+	if _, _, err := AddHost(configPath, Host{Alias: "worker", Hostname: "10.0.0.2", User: "ubuntu"}); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	removed, err := RemoveHost(configPath, "nonexistent")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if removed {
+		t.Fatal("expected removed=false for nonexistent alias")
+	}
+}
+
+func TestRemoveHostReturnsFalseWhenFileAbsent(t *testing.T) {
+	removed, err := RemoveHost(filepath.Join(t.TempDir(), "config"), "anything")
+	if err != nil {
+		t.Fatalf("expected no error for missing file, got %v", err)
+	}
+	if removed {
+		t.Fatal("expected removed=false when file does not exist")
+	}
+}
+
+func TestRemoveHostRequiresAlias(t *testing.T) {
+	_, err := RemoveHost(filepath.Join(t.TempDir(), "config"), "   ")
+	if err == nil {
+		t.Fatal("expected error for blank alias")
+	}
+}

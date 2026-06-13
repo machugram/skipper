@@ -1,6 +1,7 @@
 package sshconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,19 +27,26 @@ func DefaultConfigPath() (string, error) {
 }
 
 func ParseHosts(path string) ([]Host, error) {
-	f, err := os.Open(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []Host{}, fmt.Errorf("error: %w", err)
 		}
 		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
-
-	defer f.Close()
-
-	cfg, err := ssh_config.Decode(f)
+	hosts, err := parseHostsBytes(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode config file %q: %w", path, err)
+	}
+	return hosts, nil
+}
+
+// parseHostsBytes parses SSH host entries from raw config bytes.
+// Used by ParseHosts and internally by AddHost to avoid re-reading the file.
+func parseHostsBytes(content []byte) ([]Host, error) {
+	cfg, err := ssh_config.Decode(bytes.NewReader(content))
+	if err != nil {
+		return nil, err
 	}
 
 	var hosts []Host

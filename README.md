@@ -14,6 +14,10 @@ A CLI tool for managing SSH connections with an interactive terminal UI. Skipper
 - **SSH config parsing** -- reads host aliases, users, hostnames, ports, and identity files from your SSH config
 - **Fuzzy search** -- quickly narrow down hosts by typing
 - **Seamless connection** -- selects a host and drops you straight into an SSH session
+- **Add hosts** -- interactive form or one-liner (`skipper add` / `skipper add <alias> user@host[:port]`)
+- **Remove hosts** -- `skipper remove <alias>` (or `rm`) deletes a host block from the config
+- **Direct connect** -- `skipper connect <alias>` bypasses the picker and connects immediately
+- **In-picker delete** -- press `d` on a host in the TUI to remove it without leaving the picker
 
 ## Installation
 ### Quick Install
@@ -79,17 +83,32 @@ skipper [command] [flags]
 
 | Flag | Description |
 |------|-------------|
-| `-a, --add <alias> <target>` | Add a host entry to the SSH config using a target like `user@host[:port]` |
 | `-c, --config <path>` | Path to SSH config file (default: `~/.ssh/config`) |
 | `-f, --find [term]` | Open directly in find mode, or pre-filter hosts when a search term is provided |
 | `-v, --version` | Print version |
 | `-h, --help` | Show help |
 
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `add` | Launch an interactive form (alias, user, host name, port) to add a host entry |
+| `add <alias> <user@host[:port]>` | Non-interactively add a host entry to the SSH config under the given alias |
+| `remove <alias>` / `rm <alias>` | Remove a host entry from the SSH config by alias |
+| `connect <alias>` | Connect directly to a host by alias without opening the picker |
+| `man [dir]` | Generate roff man pages to `dist/man/` (or a custom directory) |
+
 Examples:
 
 ```bash
-skipper --add devone user@ipaddress:9000
-skipper --add bastion admin@10.0.0.5
+skipper add
+skipper add devone user@ipaddress:9000
+skipper add bastion admin@10.0.0.5
+
+skipper remove devone
+skipper rm bastion --force   # exit 0 even when alias not found
+
+skipper connect bastion
 ```
 
 ### Generate Man Pages
@@ -102,28 +121,14 @@ skipper man ./dist/man
 
 This writes roff man pages to `dist/man/`, including the main `skipper.1` page.
 
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `add` | Launch an interactive form (alias, user, host name, port) to add a host entry |
-| `add <alias> <user@host[:port]>` | Non-interactively add a host entry to the SSH config under the given alias |
-
-Examples:
-
-```bash
-skipper add
-skipper add devone user@ipaddress:9000
-skipper add bastion admin@10.0.0.5
-```
-
-### Keyboard Controls
+### Keyboard Controls (TUI picker)
 
 | Key | Action |
 |-----|--------|
 | `Enter` | Connect to selected host |
 | `Up/Down` or `j/k` | Navigate the list |
-| / | Start filtering hosts |
+| `/` | Start filtering hosts |
+| `d` | Delete selected host from the SSH config |
 | `Esc` / `Ctrl+C` / `Q` | Quit |
 
 ## Make Targets

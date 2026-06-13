@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [Unreleased]
+
+### Added
+
+- `skipper remove <alias>` (alias `rm`) — removes a host block from the SSH config.
+  Accepts `--force` / `-F` to exit 0 when the alias does not exist.
+- `skipper connect <alias>` — connects directly to a host by alias, bypassing the TUI picker.
+- TUI picker: press `d` to delete the highlighted host from the config in-place.
+
+### Changed
+
+- Replaced `charmbracelet/huh` interactive form with a lightweight `bubbles/textinput`
+  implementation, removing ~7 transitive dependencies (catppuccin, hashstructure,
+  go-humanize, x/exp/strings, blackfriday, go.yaml, heredoc).
+
+---
+
 ## [v0.2.1]
 
 ### Added
