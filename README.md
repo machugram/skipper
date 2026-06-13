@@ -74,7 +74,7 @@ Unit tests live alongside the Go packages they exercise under `cmd/` and `intern
 ## Usage
 
 ```
-skipper [flags]
+skipper [command] [flags]
 ```
 
 | Flag | Description |
@@ -101,6 +101,21 @@ skipper man ./dist/man
 ```
 
 This writes roff man pages to `dist/man/`, including the main `skipper.1` page.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `add` | Launch an interactive form (alias, user, host name, port) to add a host entry |
+| `add <alias> <user@host[:port]>` | Non-interactively add a host entry to the SSH config under the given alias |
+
+Examples:
+
+```bash
+skipper add
+skipper add devone user@ipaddress:9000
+skipper add bastion admin@10.0.0.5
+```
 
 ### Keyboard Controls
 

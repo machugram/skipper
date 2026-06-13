@@ -8,23 +8,23 @@ import (
 	"unicode"
 )
 
-func AddHost(path string, host Host) (addedHost *Host, err error) {
+func AddHost(path string, host Host) (addedHost *Host, created bool, err error) {
 	if strings.TrimSpace(host.Hostname) == "" {
-		return nil, fmt.Errorf("host name is required")
+		return nil, false, fmt.Errorf("host name is required")
 	}
 
 	if strings.TrimSpace(host.User) == "" {
-		return nil, fmt.Errorf("user is required")
+		return nil, false, fmt.Errorf("user is required")
 	}
 
 	host.Alias = resolveAlias(host)
 	if err := validateHostFields(host); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	existingHosts, err := readExistingHosts(path)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	for _, existingHost := range existingHosts {
@@ -33,53 +33,54 @@ func AddHost(path string, host Host) (addedHost *Host, err error) {
 		}
 
 		if sameHostSettings(existingHost, host) {
-			return &existingHost, nil
+			return &existingHost, false, nil
 		}
 
-		return nil, fmt.Errorf("host %q already exists in %s with different settings", host.Alias, path)
+		return nil, false, fmt.Errorf("host %q already exists in %s with different settings", host.Alias, path)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
+		return nil, false, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
 	currentContent, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("failed to read config file %q: %w", path, err)
+		return nil, false, fmt.Errorf("failed to read config file %q: %w", path, err)
 	}
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
+		return nil, false, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
 			if err == nil {
 				err = fmt.Errorf("failed to close config file %q: %w", path, cerr)
 			} else {
-				err = fmt.Errorf("%v; close error for %q: %w", err, path, cerr)
+				err = fmt.Errorf("%w; close error for %q: %w", err, path, cerr)
 			}
 		}
 	}()
 
 	if len(currentContent) > 0 && !strings.HasSuffix(string(currentContent), "\n") {
 		if _, err := file.WriteString("\n"); err != nil {
-			return nil, fmt.Errorf("failed to prepare config file %q: %w", path, err)
+			return nil, false, fmt.Errorf("failed to prepare config file %q: %w", path, err)
 		}
 	}
 
 	if len(strings.TrimSpace(string(currentContent))) > 0 {
 		if _, err := file.WriteString("\n"); err != nil {
-			return nil, fmt.Errorf("failed to separate config entries in %q: %w", path, err)
+			return nil, false, fmt.Errorf("failed to separate config entries in %q: %w", path, err)
 		}
 	}
 
 	if _, err := file.WriteString(formatHostEntry(host)); err != nil {
-		return nil, fmt.Errorf("failed to write host %q to %s: %w", host.Alias, path, err)
+		return nil, false, fmt.Errorf("failed to write host %q to %s: %w", host.Alias, path, err)
 	}
 
 	addedHost = &host
-	return addedHost, nil
+	created = true
+	return addedHost, created, nil
 }
 
 func readExistingHosts(path string) ([]Host, error) {
@@ -96,14 +97,14 @@ func readExistingHosts(path string) ([]Host, error) {
 
 func formatHostEntry(host Host) string {
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("Host %s\n", host.Alias))
-	builder.WriteString(fmt.Sprintf("  HostName %s\n", host.Hostname))
-	builder.WriteString(fmt.Sprintf("  User %s\n", host.User))
+	fmt.Fprintf(&builder, "Host %s\n", host.Alias)
+	fmt.Fprintf(&builder, "  HostName %s\n", host.Hostname)
+	fmt.Fprintf(&builder, "  User %s\n", host.User)
 	if host.Port > 0 {
-		builder.WriteString(fmt.Sprintf("  Port %d\n", host.Port))
+		fmt.Fprintf(&builder, "  Port %d\n", host.Port)
 	}
 	if host.IdentityFile != "" {
-		builder.WriteString(fmt.Sprintf("  IdentityFile %s\n", host.IdentityFile))
+		fmt.Fprintf(&builder, "  IdentityFile %s\n", host.IdentityFile)
 	}
 
 	return builder.String()
